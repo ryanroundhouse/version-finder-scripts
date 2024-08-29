@@ -21,7 +21,7 @@ The `get_releases.sh` script iterates through a predefined list of Jira project 
    ```
    pip install requests
    ```
-3. Create a `jira_credentials.json` file in your home directory with the following structure:
+3. Create a `jira_credentials.json` file in the same directory as the scripts with the following structure:
    ```json
    {
      "jira_url": "https://your-jira-instance.atlassian.net",
