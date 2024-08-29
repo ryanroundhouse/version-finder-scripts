@@ -3,6 +3,7 @@ from requests.auth import HTTPBasicAuth
 import json
 import os
 import sys
+import copy  # Add this import
 from release import parse_releases
 
 def load_config():
@@ -43,32 +44,80 @@ def get_project_versions(project_key):
         print(f"Error retrieving versions for project {project_key}: {str(e)}")
         return []
 
-def write_releases_to_json(releases, project_key):
+def filter_releases(releases, project_key):
+    """
+    Filters releases based on project-specific rules.
+    
+    Args:
+        releases (list): A list of Release objects.
+        project_key (str): The key of the project being processed.
+    
+    Returns:
+        A tuple containing three filtered lists of Release objects:
+        (non_nsbl_releases, nsbl_releases, pubs_releases) for CIS project,
+        (releases, [], []) for other projects.
+    """
+    if project_key == "CIS":
+        nsbl_releases = []
+        pubs_releases = []
+        non_nsbl_pubs_releases = []
+        for release in releases:
+            if "CIS" in release.name.upper():
+                original_release = copy.deepcopy(release)
+                release.name = release.name.replace("CIS", "nsBL").replace("cis", "nsBL")
+                nsbl_releases.append(release)
+                pub_release = copy.deepcopy(original_release)
+                pub_release.name = pub_release.name.replace("CIS", "PUBS").replace("cis", "PUBS")
+                pubs_releases.append(pub_release)
+                non_nsbl_pubs_releases.append(original_release)
+            elif release.name.replace(".", "").isdigit():
+                pubs_release = copy.deepcopy(release)
+                pubs_release.name = f"PUBS {release.name}"
+                pubs_releases.append(pubs_release)
+                nsbl_release = copy.deepcopy(release)
+                nsbl_release.name = f"nsBL {release.name}"
+                nsbl_releases.append(nsbl_release)
+                cis_release = copy.deepcopy(release)
+                cis_release.name = f"CIS {release.name}"
+                non_nsbl_pubs_releases.append(cis_release)
+            elif "PUBS" in release.name.upper():
+                pubs_releases.append(release)
+            elif "nsbl" not in release.name.lower() and "pubs" not in release.name.lower():
+                non_nsbl_pubs_releases.append(release)
+        return non_nsbl_pubs_releases, nsbl_releases, pubs_releases
+    return releases, [], []
+
+def write_releases_to_json(releases, filename):
     """
     Writes the release data to a JSON file.
     
     Args:
         releases (list): A list of Release objects containing release information.
-        project_key (str): The key of the project to use in the filename.
+        filename (str): The name of the file to write the data to.
     """
-    filename = f"{project_key.lower()}_releases.json"
     try:
         with open(filename, 'w') as file:
             json.dump([release.__dict__ for release in releases], file, indent=4, default=str)
-        print(f"Release data for {project_key} successfully written to {filename}")
+        print(f"Release data successfully written to {filename}")
     except Exception as e:
         print(f"Error writing release data to file: {str(e)}")
 
 def process_project(project_key):
     """
-    Processes a single project: retrieves its versions and writes them to a JSON file.
+    Processes a single project: retrieves its versions, filters them, and writes them to JSON file(s).
     
     Args:
         project_key (str): The key of the project to process.
     """
     releases = get_project_versions(project_key)
     if releases:
-        write_releases_to_json(releases, project_key)
+        filtered_releases, nsbl_releases, pubs_releases = filter_releases(releases, project_key)
+        write_releases_to_json(filtered_releases, f"{project_key.lower()}_releases.json")
+        if project_key == "CIS":
+            if nsbl_releases:
+                write_releases_to_json(nsbl_releases, "nsbl_releases.json")
+            if pubs_releases:
+                write_releases_to_json(pubs_releases, "pubs_releases.json")
 
 config = load_config()
 if not config:
