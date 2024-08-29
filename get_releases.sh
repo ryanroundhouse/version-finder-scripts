@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the project keys
-PROJECT_KEYS=("CIS" "MC" "CSR" "BLR" "A7")
+PROJECT_KEYS=("CIS" "MC" "CSR" "BLR" "A7" "CC")
 
 # Run the Python script for each project key
 for PROJECT_KEY in "${PROJECT_KEYS[@]}"; do
