@@ -1,10 +1,10 @@
 # Jira Project Release Fetcher
 
-This script automates the process of fetching release information for multiple Jira projects.
+This project automates the process of fetching release information for multiple Jira projects.
 
 ## Description
 
-The `get_releases.sh` script iterates through a predefined list of Jira project keys and calls a Python script (`get-jira-projects.py`) for each project. The Python script fetches the release information for the specified project from Jira and saves it to a JSON file.
+The `get_releases.sh` script iterates through a predefined list of Jira project keys and calls a Python script (`get-jira-projects.py`) for each project. The Python script fetches the release information for the specified project from Jira and saves it to JSON file(s).
 
 ## Prerequisites
 
@@ -33,7 +33,7 @@ The `get_releases.sh` script iterates through a predefined list of Jira project 
 
 ## Usage
 
-1. Make the script executable:
+1. Make the bash script executable:
    ```
    chmod +x get_releases.sh
    ```

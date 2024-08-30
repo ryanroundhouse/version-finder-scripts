@@ -1,3 +1,4 @@
+from datetime import datetime
 import requests
 from requests.auth import HTTPBasicAuth
 import json
@@ -64,27 +65,40 @@ def filter_releases(releases, project_key):
         for release in releases:
             if "CIS" in release.name.upper():
                 original_release = copy.deepcopy(release)
-                release.name = release.name.replace("CIS", "nsBL").replace("cis", "nsBL")
+                stripped_name = release.name.lower().replace("cis", "").strip()
+                release.name = stripped_name
                 nsbl_releases.append(release)
                 pub_release = copy.deepcopy(original_release)
-                pub_release.name = pub_release.name.replace("CIS", "PUBS").replace("cis", "PUBS")
+                pub_release.name = stripped_name
                 pubs_releases.append(pub_release)
+                original_release.name = stripped_name
                 non_nsbl_pubs_releases.append(original_release)
             elif release.name.replace(".", "").isdigit():
                 pubs_release = copy.deepcopy(release)
-                pubs_release.name = f"PUBS {release.name}"
                 pubs_releases.append(pubs_release)
                 nsbl_release = copy.deepcopy(release)
-                nsbl_release.name = f"nsBL {release.name}"
                 nsbl_releases.append(nsbl_release)
                 cis_release = copy.deepcopy(release)
-                cis_release.name = f"CIS {release.name}"
                 non_nsbl_pubs_releases.append(cis_release)
             elif "PUBS" in release.name.upper():
-                pubs_releases.append(release)
+                modified_release = copy.deepcopy(release)
+                modified_release.name = modified_release.name.lower().replace("pubs", "").strip()
+                pubs_releases.append(modified_release)
             elif "nsbl" not in release.name.lower() and "pubs" not in release.name.lower():
-                non_nsbl_pubs_releases.append(release)
+                modified_release = copy.deepcopy(release)
+                modified_release.name = modified_release.name.lower().replace("nsbl", "").strip()
+                non_nsbl_pubs_releases.append(modified_release)
+        
+        # Sort all release lists by releaseDate (newest first)
+        releases.sort(key=lambda x: x.releaseDate or datetime.min.date(), reverse=True)
+        non_nsbl_pubs_releases.sort(key=lambda x: x.releaseDate or datetime.min.date(), reverse=True)
+        nsbl_releases.sort(key=lambda x: x.releaseDate or datetime.min.date(), reverse=True)
+        pubs_releases.sort(key=lambda x: x.releaseDate or datetime.min.date(), reverse=True)
+        
         return non_nsbl_pubs_releases, nsbl_releases, pubs_releases
+    
+    # For other projects, sort releases by releaseDate (newest first)
+    releases.sort(key=lambda x: x.releaseDate or datetime.min.date(), reverse=True)
     return releases, [], []
 
 def write_releases_to_json(releases, filename):
